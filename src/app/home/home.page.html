@@ -1,0 +1,29 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      Camera
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <ion-card *ngFor="let photo of photos">
+    <img [src]="photo.imagePath" alt="img">
+    <ion-card-header>
+      <ion-card-subtitle>{{ photo.photoDate}}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      {{photo.caption}}
+    </ion-card-content>
+  </ion-card>
+
+
+
+  <ion-fab vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="takePicture()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
