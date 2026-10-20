@@ -1,29 +1,35 @@
-<ion-header>
+<ion-header class="ion-no-border">
   <ion-toolbar>
-    <ion-title>
-      Camera
-    </ion-title>
+    <div class="brand"><span class="brand-icon" aria-hidden="true">◎</span><ion-title>Mi cámara<span>Una colección de momentos</span></ion-title></div>
+    <span class="toolbar-tag" slot="end">GALERÍA PERSONAL</span>
   </ion-toolbar>
 </ion-header>
-
 <ion-content>
-
-  <ion-card *ngFor="let photo of photos">
-    <img [src]="photo.imagePath" alt="img">
-    <ion-card-header>
-      <ion-card-subtitle>{{ photo.photoDate}}</ion-card-subtitle>
-    </ion-card-header>
-
-    <ion-card-content>
-      {{photo.caption}}
-    </ion-card-content>
-  </ion-card>
-
-
-
-  <ion-fab vertical="bottom" horizontal="end">
-    <ion-fab-button (click)="takePicture()">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+  <main class="gallery">
+    <section class="capture-layout">
+      <div class="intro">
+        <span class="eyebrow"><span></span> CAPTURA · GUARDA · RECUERDA</span>
+        <h1>Lo cotidiano,<br><em>extraordinario.</em></h1>
+        <p>Hay momentos que merecen quedarse.<br>Toma una foto y dale un lugar en tu colección.</p>
+        <span class="local-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg> Tus fotos se guardan en este dispositivo</span>
+      </div>
+      <div class="capture-card">
+        <div class="capture-heading"><span class="camera-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6 2-3h4l2 3h4v14H4V6z"/><circle cx="12" cy="12" r="4"/></svg></span><div><h2>Un nuevo recuerdo</h2><p>La próxima foto empieza aquí.</p></div></div>
+        <ion-item lines="none"><ion-input label="Descripción" labelPlacement="stacked" placeholder="¿Qué vas a fotografiar?" [(ngModel)]="caption" maxlength="300" [disabled]="busy"></ion-input></ion-item>
+        <ion-button expand="block" (click)="takePicture()" [disabled]="busy || !ready"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6 2-3h4l2 3h4v14H4V6z"/><circle cx="12" cy="12" r="4"/></svg>{{ busy ? 'Procesando…' : 'Tomar fotografía' }}<span class="button-arrow" aria-hidden="true">↗</span></ion-button>
+        <p role="status" aria-live="polite" class="status">{{message}}</p>
+        <ion-button *ngIf="!ready && !busy" fill="outline" (click)="initialize()">Reintentar</ion-button>
+      </div>
+    </section>
+    <section class="collection">
+      <div class="section-heading"><div><span class="eyebrow">TU COLECCIÓN</span><h2>Recuerdos a la vista <span class="count">{{photos.length}}</span></h2></div><span class="section-note">Cada foto, una historia.</span></div>
+      <div class="empty" *ngIf="ready && !photos.length"><span class="empty-icon" aria-hidden="true">+</span><h3>Aún hay mucho por capturar</h3><p>Toma tu primera fotografía para empezar la colección.</p></div>
+      <div class="photos">
+        <ion-card *ngFor="let photo of photos">
+          <div class="photo-frame"><img *ngIf="photo.webPath" [src]="photo.webPath" [alt]="photo.caption" loading="lazy"><p *ngIf="!photo.webPath" class="missing">El archivo de esta foto no está disponible.</p></div>
+          <ion-card-header><ion-card-subtitle>{{photo.photoDate | date:'dd MMM yyyy · HH:mm'}}</ion-card-subtitle><ion-card-title>{{photo.caption}}</ion-card-title></ion-card-header>
+        </ion-card>
+      </div>
+    </section>
+  </main>
 </ion-content>

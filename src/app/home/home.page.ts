@@ -1,80 +1,64 @@
 import { Component, OnInit } from '@angular/core';
-import { Camera } from '@capacitor/camera';
-import { Directory, Filesystem } from "@capacitor/filesystem";
-import { PhotoDbService } from "./photo-db.service";
-import { PhotoItem } from "./IPhotoItem";
+import { PhotoDbService } from './photo-db.service';
+import { PhotoStorageService } from './photo-storage.service';
+import { PhotoView } from './IPhotoItem';
 
-@Component({
-  selector: 'app-home',
-  templateUrl: 'home.page.html',
-  styleUrls: ['home.page.scss'],
-  standalone: false,
-})
+@Component({ selector: 'app-home', templateUrl: 'home.page.html', styleUrls: ['home.page.scss'], standalone: false })
 export class HomePage implements OnInit {
+  photos: PhotoView[] = [];
+  busy = false;
+  ready = false;
+  message = '';
+  caption = '';
 
-  photos: PhotoItem[] = [];
+  constructor(private db: PhotoDbService, private storage: PhotoStorageService) {}
 
-  constructor(private _PhotoDbService: PhotoDbService) { }
+  async ngOnInit(): Promise<void> { await this.initialize(); }
 
-  async ngOnInit(): Promise<void> {
-    await this._PhotoDbService.init();
-    await this.loadPhotos();
-  }
-
-
-  async takePicture(): Promise<void> {
+  async initialize(): Promise<void> {
+    this.busy = true;
+    this.message = '';
     try {
-      const result = await Camera.takePhoto({
-        quality: 90,
-      });
-
-      if (!result.webPath) return;
-
-      const fileName = `photo_${Date.now}.jpeg`;
-      const savePath = await this.saveImageToFileSystem(result.webPath, fileName);
-
-      await this._PhotoDbService.savePhoto({
-        imagePath: savePath,
-        caption: 'Por defecto',
-        photoDate: new Date().toLocaleDateString(),
-        isFavorite: false
-      });
-
-   
-    } catch (error) {
-      console.error('Error al tomar la foto:', error);
-    }
+      await this.db.init();
+      await this.loadPhotos();
+      this.ready = true;
+    } catch {
+      this.message = 'No se pudo abrir la galería. Intenta de nuevo.';
+    } finally { this.busy = false; }
   }
 
   async loadPhotos(): Promise<void> {
-    this.photos = await this._PhotoDbService.getPhotos();
+    const photos = await this.db.getPhotos();
+    this.photos = await Promise.all(photos.map(async photo => {
+      let webPath = '';
+      try { webPath = await this.storage.displayPath(photo.imagePath); } catch { /* Mostrar el registro aunque falte el archivo. */ }
+      return { ...photo, webPath };
+    }));
   }
 
-  async saveImageToFileSystem(webPath: string, fileName: string): Promise<string> {
-    const response = await fetch(webPath);
-    const blob = await response.blob();
-    const base64Data = await this.blobToBase64(blob);
-
-    const savedFile = await Filesystem.writeFile({
-      path: fileName,
-      data: base64Data,
-      directory: Directory.Data
-    })
-
-    return savedFile.uri;
-
+  async takePicture(): Promise<void> {
+    if (this.busy || !this.ready) return;
+    this.busy = true;
+    this.message = '';
+    let path: string | undefined;
+    let saved = false;
+    try {
+      const webPath = await this.storage.capture();
+      if (!webPath) return;
+      path = await this.storage.save(webPath);
+      await this.db.savePhoto({ imagePath: path, caption: this.caption.trim() || 'Sin descripción',
+        photoDate: new Date().toISOString(), isFavorite: false });
+      saved = true;
+      this.caption = '';
+      await this.loadPhotos();
+      this.message = 'Fotografía guardada.';
+    } catch (error) {
+      if (path && !saved) await this.storage.remove(path).catch(() => undefined);
+      const detail = error instanceof Error ? error.message : String(error);
+      if (!/cancel|dismiss/i.test(detail)) {
+        this.message = saved ? 'La fotografía se guardó, pero no se pudo actualizar la galería. Recarga la página.'
+          : 'No se pudo guardar la fotografía. Comprueba el permiso de cámara y el espacio disponible.';
+      }
+    } finally { this.busy = false; }
   }
-
-  private blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
 }

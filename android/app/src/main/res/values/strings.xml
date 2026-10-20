@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Camara</string>
+    <string name="title_activity_main">Camara</string>
+    <string name="package_name">edu.electiva.appcamera</string>
+    <string name="custom_url_scheme">edu.electiva.appcamera</string>
+</resources>

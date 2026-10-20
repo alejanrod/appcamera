@@ -68,3 +68,17 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local credentials, signing keys and SDK settings
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+**/local.properties
+
+# Local Android caches
+**/.gradle/
+**/.kotlin/
